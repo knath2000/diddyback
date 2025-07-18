@@ -1,0 +1,31 @@
+app = "diddyback"
+primary_region = "iad" # change to your preferred region
+
+[build]
+  image = ""
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8080"
+  PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING = "1"
+
+[deploy]
+  release_command = "pnpm prisma migrate deploy"
+
+[[services]]
+  internal_port = 8080
+  protocol = "tcp"
+
+  [[services.ports]]
+    port = 80
+  [[services.ports]]
+    port = 443
+
+  [[services.checks]]
+    type = "http"
+    interval = "10s"
+    timeout = "5s"
+    grace_period = "5s"
+    method = "get"
+    path = "/"
+    protocol = "http" 
