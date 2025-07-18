@@ -13,9 +13,10 @@ const port = Number(process.env.PORT) || 8080
 app.use(cors())
 app.use(express.json())
 
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() })
-})
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
 
 app.use('/items', itemsRouter)
 
