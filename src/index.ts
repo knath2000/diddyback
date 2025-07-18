@@ -8,7 +8,8 @@ import itemsRouter from './routes/items'
 dotenv.config()
 
 const app = express()
-const port = Number(process.env.PORT) || 8080
+console.log('Environment PORT variable:', process.env.PORT);
+const port = process.env.PORT ? Number(process.env.PORT) : 8080
 
 app.use(cors())
 app.use(express.json())
