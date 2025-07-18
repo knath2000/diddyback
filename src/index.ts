@@ -8,7 +8,7 @@ import itemsRouter from './routes/items'
 dotenv.config()
 
 const app = express()
-const port = process.env.PORT ? Number(process.env.PORT) : 4000
+const port = Number(process.env.PORT) || 8080
 
 app.use(cors())
 app.use(express.json())
@@ -24,6 +24,6 @@ app.use((err: unknown, _req: express.Request, res: express.Response, _next: expr
   res.status(500).json({ error: 'Internal Server Error' })
 })
 
-app.listen(port, () => {
-  console.log(`diddyback server listening on http://localhost:${port}`)
-}) 
+app.listen(port, '0.0.0.0', () => {
+  console.log(`diddyback server listening on http://0.0.0.0:${port}`);
+}); 
