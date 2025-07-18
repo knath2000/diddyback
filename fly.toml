@@ -8,7 +8,6 @@ primary_region = "iad"
   PORT = "8080"
 
 [deploy]
-  release_command = "printenv && pnpm prisma migrate deploy"
 
 [[services]]
   internal_port = 8080
