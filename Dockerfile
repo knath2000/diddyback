@@ -31,10 +31,14 @@ FROM node:20-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
+# Copy pnpm from the base image so it's available for release command
+COPY --from=base /usr/local/bin/pnpm /usr/local/bin/
+
 # Copy compiled output and minimal node_modules (prod only)
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/package.json ./package.json
 
 EXPOSE 8080
 CMD ["node", "dist/src/index.js"] 
