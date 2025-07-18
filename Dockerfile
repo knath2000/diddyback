@@ -31,7 +31,8 @@ FROM node:20-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Install pnpm in the runtime stage so it's available for release command
+# Install openssl for Prisma, and pnpm for release command
+RUN apt-get update -y && apt-get install -y openssl
 ARG PNPM_VERSION=9.1.1
 RUN npm i -g pnpm@${PNPM_VERSION}
 
