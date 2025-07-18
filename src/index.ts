@@ -11,7 +11,22 @@ const app = express()
 console.log('Environment PORT variable:', process.env.PORT);
 const port = process.env.PORT ? Number(process.env.PORT) : 8080
 
-app.use(cors())
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://your-production-frontend-url.com' // TODO: Add your production frontend URL
+];
+
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
+};
+
+app.use(cors(corsOptions))
 app.use(express.json())
 
 // Health check endpoint

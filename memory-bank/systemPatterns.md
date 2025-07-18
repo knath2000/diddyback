@@ -61,3 +61,9 @@ GET    /auth/me      (JWT)
 2. `pnpm install && pnpm run generate && pnpm run build`.
 3. Prisma migrations auto-apply (`prisma migrate deploy`).
 4. Container starts `node dist/index.js`. 
+
+## Deployment Pattern (Fly.io)
+1.  **Secret Management**: Fly.io secrets (e.g., `DATABASE_URL`, `DIRECT_URL`) are only available at runtime, not during the `release_command` phase.
+2.  **Database Migrations**: Prisma migrations must be run at application startup.
+3.  **Startup Script**: A `docker-entrypoint.sh` script is used to orchestrate startup. It first runs `pnpm prisma migrate deploy`, then starts the application with `exec node dist/src/index.js`.
+4.  **Dockerfile Configuration**: The `Dockerfile`'s `CMD` is set to execute the `docker-entrypoint.sh` script. The `release_command` in `fly.toml` is removed. 
