@@ -25,6 +25,6 @@ app.use((err: unknown, _req: express.Request, res: express.Response, _next: expr
   res.status(500).json({ error: 'Internal Server Error' })
 })
 
-app.listen(port, '0.0.0.0', () => {
-  console.log(`diddyback server listening on http://0.0.0.0:${port}`);
+app.listen(port, () => {
+  console.log(`diddyback server listening on port ${port}`);
 }); 
