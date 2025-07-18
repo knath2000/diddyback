@@ -31,8 +31,9 @@ FROM node:20-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Copy pnpm from the base image so it's available for release command
-COPY --from=base /usr/local/bin/pnpm /usr/local/bin/
+# Install pnpm in the runtime stage so it's available for release command
+ARG PNPM_VERSION=9.1.1
+RUN npm i -g pnpm@${PNPM_VERSION}
 
 # Copy compiled output and minimal node_modules (prod only)
 COPY --from=builder /app/dist ./dist
