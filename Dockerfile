@@ -6,6 +6,9 @@ WORKDIR /app
 ARG PNPM_VERSION=9.1.1
 RUN npm i -g pnpm@${PNPM_VERSION}
 
+# Set env to ignore missing checksum
+ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
+
 # Copy manifest first for better cache hygiene
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
@@ -15,8 +18,12 @@ FROM base AS builder
 # Copy rest of the source
 COPY . .
 
+# Set env to ignore missing checksum and use binary engine type
+ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1 \
+    PRISMA_CLI_QUERY_ENGINE_TYPE=binary
+
 # Generate Prisma client and compile TypeScript
-RUN pnpm prisma generate \
+RUN pnpm prisma generate --data-proxy \
     && pnpm run build
 
 # ---- Production runtime ----
