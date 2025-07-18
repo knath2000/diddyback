@@ -18,6 +18,11 @@ app.get('/health', (req, res) => {
   res.status(200).send('OK');
 });
 
+// Root endpoint (Railway health checks default to "/")
+app.get('/', (req, res) => {
+  res.status(200).send('OK');
+});
+
 app.use('/items', itemsRouter)
 
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
