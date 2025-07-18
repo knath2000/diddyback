@@ -1,6 +1,10 @@
 #!/bin/sh
 set -e
 
+echo "--- PRINTING ENVIRONMENT VARIABLES ---"
+printenv
+echo "------------------------------------"
+
 echo "Running database migrations..."
 pnpm prisma migrate deploy
 
