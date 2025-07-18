@@ -1,15 +1,25 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const prisma_1 = require("../utils/prisma");
 const router = (0, express_1.Router)();
 // GET /items
-router.get('/', async (req, res, next) => {
+router.get('/', (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b;
     try {
-        const page = Number(req.query.page ?? 1);
-        const limit = Math.min(Number(req.query.limit ?? 20), 100);
+        const page = Number((_a = req.query.page) !== null && _a !== void 0 ? _a : 1);
+        const limit = Math.min(Number((_b = req.query.limit) !== null && _b !== void 0 ? _b : 20), 100);
         const skip = (page - 1) * limit;
-        const [items, total] = await prisma_1.prisma.$transaction([
+        const [items, total] = yield prisma_1.prisma.$transaction([
             prisma_1.prisma.item.findMany({
                 skip,
                 take: limit,
@@ -42,12 +52,12 @@ router.get('/', async (req, res, next) => {
     catch (err) {
         next(err);
     }
-});
+}));
 // GET /items/:id
-router.get('/:id', async (req, res, next) => {
+router.get('/:id', (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { id } = req.params;
-        const item = await prisma_1.prisma.item.findFirst({
+        const item = yield prisma_1.prisma.item.findFirst({
             where: {
                 OR: [{ id }, { slug: id }],
             },
@@ -76,14 +86,15 @@ router.get('/:id', async (req, res, next) => {
     catch (err) {
         next(err);
     }
-});
+}));
 // GET /items/:id/prices
-router.get('/:id/prices', async (req, res, next) => {
+router.get('/:id/prices', (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b;
     try {
         const { id } = req.params;
-        const platform = req.query.platform?.toLowerCase();
-        const limit = Math.min(Number(req.query.limit ?? 1000), 5000);
-        const variants = await prisma_1.prisma.variant.findMany({
+        const platform = (_a = req.query.platform) === null || _a === void 0 ? void 0 : _a.toLowerCase();
+        const limit = Math.min(Number((_b = req.query.limit) !== null && _b !== void 0 ? _b : 1000), 5000);
+        const variants = yield prisma_1.prisma.variant.findMany({
             where: { itemId: id },
             select: { id: true },
         });
@@ -94,7 +105,7 @@ router.get('/:id/prices', async (req, res, next) => {
         const where = { variantId: { in: variantIds } };
         if (platform)
             where.platform = platform;
-        const [prices, total] = await prisma_1.prisma.$transaction([
+        const [prices, total] = yield prisma_1.prisma.$transaction([
             prisma_1.prisma.price.findMany({
                 where,
                 orderBy: { capturedAt: 'desc' },
@@ -114,5 +125,5 @@ router.get('/:id/prices', async (req, res, next) => {
     catch (err) {
         next(err);
     }
-});
+}));
 exports.default = router;
