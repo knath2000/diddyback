@@ -2,8 +2,9 @@
 FROM node:20 AS base
 WORKDIR /app
 
-# Install pnpm globally
-RUN npm i -g pnpm
+# Install compatible pnpm version (lockfileVersion 9)
+ARG PNPM_VERSION=9.1.1
+RUN npm i -g pnpm@${PNPM_VERSION}
 
 # Copy manifest first for better cache hygiene
 COPY package.json pnpm-lock.yaml ./
