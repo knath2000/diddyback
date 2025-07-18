@@ -3,7 +3,6 @@
   "version": "0.1.0",
   "description": "Backend service for Supreme Price Tracker",
   "private": true,
-  "type": "module",
   "engines": {
     "node": ">=18"
   },
