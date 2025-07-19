@@ -25,8 +25,6 @@ ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1 \
 # Generate Prisma client and compile TypeScript
 RUN pnpm prisma generate \
     && pnpm run build
-# Transpile Prisma seed script to plain JS (fast runtime execution)
-RUN pnpm ts-node --transpile-only --compiler-options '{"module":"commonjs","moduleResolution":"node"}' prisma/seed.ts > prisma/seed.js
 
 # ---- Production runtime ----
 FROM node:20-slim AS runtime

@@ -14,11 +14,11 @@
     "generate": "prisma generate",
     "migrate": "prisma migrate dev",
     "db:push": "prisma db push",
-    "db:seed": "node prisma/seed.js",
+    "db:seed": "ts-node prisma/seed.ts",
     "lint": "echo 'add lint script if needed'"
   },
   "prisma": {
-    "seed": "node prisma/seed.js"
+    "seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "5.22.0",
