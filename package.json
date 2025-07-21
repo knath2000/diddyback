@@ -8,20 +8,26 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
-    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
     "start": "node dist/src/index.js",
+    "build": "tsup",
+    "test": "vitest",
     "generate": "prisma generate",
+    "scrape": "tsx prisma/scrape-supreme.ts",
+    "parse:local": "tsx prisma/parse-local.ts",
+    "db:backfill-stockx": "tsx prisma/backfill-stockx-ids.ts",
+    "get:stockx:tokens": "node scripts/get-stockx-tokens.js",
+    "test:stockx-sync": "node scripts/test-sync.js",
     "migrate": "prisma migrate dev",
     "db:push": "prisma db push",
     "db:seed": "ts-node prisma/seed.ts",
     "lint": "echo 'add lint script if needed'"
   },
   "prisma": {
-    "seed": "ts-node prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
-    "@prisma/client": "5.22.0",
+    "@prisma/client": "^5.18.0",
     "axios": "^1.10.0",
     "node-cron": "^3.0.3",
     "cheerio": "^1.1.0",
