@@ -15,10 +15,9 @@ const app = express()
 console.log('Environment PORT variable:', process.env.PORT);
 const port = process.env.PORT ? Number(process.env.PORT) : 8080
 
-const allowedOrigins = [
-  'http://localhost:3000',
-  'https://your-production-frontend-url.com'
-];
+const defaultAllowed = ['http://localhost:3000', 'http://localhost:4000']
+const envAllowed = process.env.CORS_ALLOWED_ORIGINS?.split(',').filter(Boolean) || []
+const allowedOrigins = [...defaultAllowed, ...envAllowed]
 
 const isProd = process.env.NODE_ENV === 'production'
 
