@@ -23,6 +23,7 @@
   "dependencies": {
     "@prisma/client": "5.22.0",
     "axios": "^1.10.0",
+    "node-cron": "^3.0.3",
     "cheerio": "^1.1.0",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
@@ -30,6 +31,8 @@
     "puppeteer": "^24.14.0",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "supcommunity-api": "^1.0.5",
+    "supreme-community-api": "^4.0.1",
     "zod": "^3.25.0"
   },
   "devDependencies": {

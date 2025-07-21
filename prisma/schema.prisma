@@ -21,26 +21,35 @@ model Item {
   season      String?
   styleCode   String?  @map("style_code")
   description String?
+  retailUsd   Decimal?  @map("retail_usd") @db.Decimal(10,2)
+  releaseDate DateTime? @map("release_date")
+  releaseWeek String?   @map("release_week")
+  // StockX integration
+  stockxProductId String? @unique @map("stockx_product_id")
+
+  images      ItemImage[]
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
   
   // Relations
   variants    Variant[]
+  stockxPrices StockXPrice[]
   
   @@map("items")
 }
 
 // Item variants (size, color combinations)
 model Variant {
-  id       String  @id @default(cuid())
-  itemId   String  @map("item_id")
-  size     String
-  color    String
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  itemId    String   @map("item_id")
+  size      String
+  color     String
   
   // Relations
-  item     Item    @relation(fields: [itemId], references: [id], onDelete: Cascade)
-  prices   Price[]
-  alerts   PriceAlert[]
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  prices    Price[]
+  alerts    PriceAlert[]
   watchlists Watchlist[]
   
   @@unique([itemId, size, color])
@@ -132,4 +141,33 @@ enum AlertCondition {
   ABOVE @map("above")
   BELOW @map("below")
   EQUAL @map("equal")
+} 
+
+model ItemImage {
+  id       String  @id @default(cuid())
+  itemId   String  @map("item_id")
+  url      String  @db.Text
+  idx      Int
+
+  item     Item    @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, idx])
+  @@map("item_images")
+} 
+
+// Snapshots from StockX market endpoint
+model StockXPrice {
+  id        String   @id @default(cuid())
+  itemId    String   @map("item_id")
+  size      String?
+  type      String   // lowestAsk, highestBid, lastSale
+  price     Decimal  @db.Decimal(10,2)
+  currency  String   @default("USD")
+  fetchedAt DateTime @default(now()) @map("fetched_at")
+
+  // Relations
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([itemId, fetchedAt])
+  @@map("stockx_prices")
 } 

@@ -63,6 +63,11 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
             },
           },
         },
+        // @ts-ignore - images relation will be available after prisma generate
+        images: {
+          orderBy: { idx: 'asc' },
+          select: { url: true, idx: true },
+        },
       },
     })
 
@@ -114,6 +119,64 @@ router.get('/:id/prices', async (req: Request, res: Response, next: NextFunction
     res.json({
       data: prices,
       meta: { total },
+      timestamps: {
+        dataAsOf: new Date().toISOString(),
+        requestedAt: new Date().toISOString(),
+      },
+    })
+  } catch (err) {
+    next(err)
+  }
+})
+
+// GET /items/:id/stockx – latest market snapshot (one row per type)
+router.get('/:id/stockx', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params
+
+    // @ts-ignore – model exists after migration
+    const results = await prisma.stockXPrice.findMany({
+      where: { itemId: id },
+      orderBy: { fetchedAt: 'desc' },
+      take: 50, // fetch recent then reduce
+    })
+
+    const latest: Record<string, any> = {}
+    for (const r of results) {
+      if (!latest[r.type]) {
+        latest[r.type] = r
+      }
+    }
+
+    res.json({
+      data: latest,
+      timestamps: {
+        dataAsOf: new Date().toISOString(),
+        requestedAt: new Date().toISOString(),
+      },
+    })
+  } catch (err) {
+    next(err)
+  }
+})
+
+// GET /items/:id/stockx/history?type=lastSale&days=30
+router.get('/:id/stockx/history', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params
+    const type = (req.query.type as string | undefined) ?? 'lastSale'
+    const days = Number(req.query.days ?? 30)
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
+
+    // @ts-ignore – model exists after migration
+    const data = await prisma.stockXPrice.findMany({
+      where: { itemId: id, type, fetchedAt: { gte: since } },
+      orderBy: { fetchedAt: 'asc' },
+    })
+
+    res.json({
+      data,
+      meta: { count: data.length },
       timestamps: {
         dataAsOf: new Date().toISOString(),
         requestedAt: new Date().toISOString(),

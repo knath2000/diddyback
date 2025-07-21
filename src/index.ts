@@ -2,6 +2,10 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 
+// @ts-ignore – types bundled with node-cron but TS may not locate before install
+import cron from 'node-cron'
+import { syncStockxMarket } from './jobs/syncStockxMarket'
+
 import itemsRouter from './routes/items'
 
 // Load environment variables from .env if present
@@ -13,11 +17,18 @@ const port = process.env.PORT ? Number(process.env.PORT) : 8080
 
 const allowedOrigins = [
   'http://localhost:3000',
-  'https://your-production-frontend-url.com' // TODO: Add your production frontend URL
+  'https://your-production-frontend-url.com'
 ];
+
+const isProd = process.env.NODE_ENV === 'production'
 
 const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
+    // In development allow requests from any origin so Nuxt dev server on LAN IP works
+    if (!isProd) {
+      return callback(null, true)
+    }
+
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -40,6 +51,13 @@ app.get('/', (req, res) => {
 });
 
 app.use('/items', itemsRouter)
+
+// Schedule StockX market sync every 10 minutes
+cron.schedule('*/10 * * * *', async () => {
+  console.log('[cron] Starting StockX sync job')
+  await syncStockxMarket()
+  console.log('[cron] StockX sync done')
+})
 
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(err)
