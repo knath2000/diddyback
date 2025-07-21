@@ -1,15 +1,20 @@
 # Active Context: Diddyback Backend
 
 ## Current Focus
-The primary focus is on populating the database with item data using a robust, local-first HTML parsing workflow. The previous live scraping attempts were thwarted by Cloudflare, so the system has pivoted to a manual, but reliable, data ingestion process.
+The backend is now fully integrated with the StockX API for real-time price tracking. The primary focus has shifted from initial data ingestion to maintaining and serving this new price data, while also ensuring robust API performance and reliability for the Nuxt frontend.
 
 ## Current State
-- The database schema has been extended to properly handle item variants, each with its own color and slug. The `Item` model now includes fields for retail price, release date, and a one-to-many relation to a new `ItemImage` table for image galleries.
-- A powerful new parser script, `prisma/parse-all-item-details.ts`, has been created. This script reads all `.html` files from the `static/` directory, extracts detailed item information (including color variants), and upserts this data into the NeonDB.
-- The system successfully ingested data for 7 items, creating 11 unique variants from the provided HTML source files.
-- The `colors` array on the `Item` model has been removed, and the database has been migrated to reflect this cleaner, variant-centric schema.
+- **StockX Integration Complete**:
+    - The database schema has been updated to support variant-level price tracking, with `stockxProductId` on the `Variant` model and a new `StockXPrice` table for market snapshots.
+    - A cron job (`src/jobs/syncStockxMarket.ts`) runs every 10 minutes to fetch and store the latest lowest ask, highest bid, and last sale prices for all tracked variants.
+    - An authentication utility (`src/utils/stockxAuth.ts`) handles the StockX OAuth 2.0 refresh token flow.
+    - New API endpoints (`/items/:id/stockx` and `/items/:id/stockx/history`) have been created to serve this data to the frontend.
+- **Data Backfill Script Created**: A one-time script (`prisma/backfill-stockx-ids.ts`) has been created to populate the `stockxProductId` for existing variants by searching the StockX API.
+- **CORS Policy Hardened**: The CORS configuration in `src/index.ts` has been updated to correctly handle origin-less requests from the Nuxt server-side renderer, fixing critical hydration errors on the frontend.
+- **Dependencies Updated**: Added `node-cron` for scheduled tasks.
 
 ## Immediate Next Steps
-1.  **Continue Data Ingestion**: Use the `parse-all-item-details.ts` script to populate the database with more items as new HTML source files are acquired.
-2.  **Frontend Integration**: Ensure the frontend is correctly displaying the newly ingested variant data, including the image galleries and detailed item attributes.
-3.  **API Hardening**: Review and test the `/api/items/:id` endpoint to confirm it correctly returns all variant and image data. 
+1.  **Run Data Backfill**: Execute the `db:backfill-stockx` script once the `STOCKX_REFRESH_TOKEN` is available to populate historical data.
+2.  **Monitor Cron Job**: Verify in the Fly.io logs that the `syncStockxMarket` job is running successfully and without errors.
+3.  **API Performance**: Monitor the performance of the new StockX-related API endpoints under load.
+4.  **Gamification Backend**: Begin planning and building the backend infrastructure for the new gamification features (Hype Points, Achievements). 
