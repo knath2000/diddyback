@@ -7,6 +7,7 @@ import cron from 'node-cron'
 import { syncStockxMarket } from './jobs/syncStockxMarket'
 
 import itemsRouter from './routes/items'
+import oauthRouter from './routes/oauth'
 
 // Load environment variables from .env if present
 dotenv.config()
@@ -61,6 +62,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/items', itemsRouter)
+app.use('/oauth/stockx', oauthRouter)
 
 // Schedule StockX market sync every 10 minutes
 cron.schedule('*/10 * * * *', async () => {

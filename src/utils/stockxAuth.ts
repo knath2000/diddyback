@@ -9,6 +9,10 @@ dotenv.config()
 let cachedToken: string | null = process.env.STOCKX_ACCESS_TOKEN || null
 let tokenExpiresAt = 0 // epoch ms
 
+export function getTokenExpiry() {
+  return tokenExpiresAt
+}
+
 async function refreshAccessToken() {
   const refreshToken = process.env.STOCKX_REFRESH_TOKEN
   if (!refreshToken) {
