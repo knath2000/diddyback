@@ -61,6 +61,10 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
               orderBy: { capturedAt: 'desc' },
               take: 1,
             },
+            stockxPrices: {
+              orderBy: { fetchedAt: 'desc' },
+              take: 3, // latest ask, bid, last
+            }
           },
         },
         // @ts-ignore - images relation will be available after prisma generate
@@ -133,10 +137,16 @@ router.get('/:id/prices', async (req: Request, res: Response, next: NextFunction
 router.get('/:id/stockx', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params
-
-    // @ts-ignore – model exists after migration
-    const results = await prisma.stockXPrice.findMany({
+    const variant = await prisma.variant.findFirst({
       where: { itemId: id },
+      select: { id: true },
+    });
+    if (!variant) {
+      return res.json({ data: {} });
+    }
+
+    const results = await prisma.stockXPrice.findMany({
+      where: { variantId: variant.id },
       orderBy: { fetchedAt: 'desc' },
       take: 50, // fetch recent then reduce
     })
@@ -167,10 +177,14 @@ router.get('/:id/stockx/history', async (req: Request, res: Response, next: Next
     const type = (req.query.type as string | undefined) ?? 'lastSale'
     const days = Number(req.query.days ?? 30)
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
-
-    // @ts-ignore – model exists after migration
+    const variants = await prisma.variant.findMany({
+      where: { itemId: id },
+      select: { id: true },
+    });
+    const variantIds = variants.map(v => v.id);
+    
     const data = await prisma.stockXPrice.findMany({
-      where: { itemId: id, type, fetchedAt: { gte: since } },
+      where: { variantId: { in: variantIds }, type, fetchedAt: { gte: since } },
       orderBy: { fetchedAt: 'asc' },
     })
 

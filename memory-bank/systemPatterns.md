@@ -1,69 +1,37 @@
 # Backend System Patterns
 
-## Database Schema (PostgreSQL)
-```sql
-TABLE items
-  id SERIAL PRIMARY KEY,
-  title TEXT NOT NULL,
-  slug TEXT UNIQUE NOT NULL,
-  brand TEXT DEFAULT 'Supreme',
-  image_url TEXT,
-  season TEXT,
-  style_code TEXT,
-  description TEXT,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now()
+## Data Ingestion Workflow
+The primary method for populating the database is a local, file-based parsing system. This was adopted after live scraping attempts were consistently blocked by Cloudflare.
 
-TABLE variants (
-  id SERIAL PRIMARY KEY,
-  item_id INTEGER REFERENCES items(id) ON DELETE CASCADE,
-  size TEXT,
-  color TEXT,
-  UNIQUE(item_id, size, color)
-)
+1.  **Source Acquisition**: Manually save the HTML source of a Supreme Community item details page into the `diddyback/static/` directory.
+2.  **Parsing**: Run the `pnpm ts-node prisma/parse-all-item-details.ts` script.
+3.  **Processing**: The script iterates through all `.html` files in the `static/` directory. For each file, it uses `cheerio` to extract:
+    *   Item details (description, retail price, release date).
+    *   A list of all colorways.
+    *   A gallery of all associated images.
+4.  **Database Population**: The script connects to the NeonDB and performs the following operations in a transaction:
+    *   Updates the core `Item` record with the new details.
+    *   Creates a new `Variant` record for each colorway, with a unique slug.
+    *   Deletes any existing images for the item and creates new `ItemImage` records for the full gallery.
 
-TABLE prices (
-  id SERIAL PRIMARY KEY,
-  variant_id INTEGER REFERENCES variants(id) ON DELETE CASCADE,
-  platform TEXT CHECK (platform IN ('stockx','goat','grailed')),
-  price_usd NUMERIC(10,2) NOT NULL,
-  currency TEXT DEFAULT 'USD',
-  ask_or_bid TEXT CHECK (ask_or_bid IN ('ask','bid','last')),
-  captured_at TIMESTAMPTZ DEFAULT now()
-)
+This approach is manual but highly reliable and avoids the complexities of anti-bot evasion.
 
-TABLE users (
-  id SERIAL PRIMARY KEY,
-  email TEXT UNIQUE NOT NULL,
-  password_hash TEXT NOT NULL,
-  name TEXT,
-  created_at TIMESTAMPTZ DEFAULT now()
-)
-```
+## Database Schema (PostgreSQL with Prisma)
+The schema is designed to support detailed item tracking with variants and image galleries.
+
+-   **`Item`**: The core model for a Supreme product. Contains metadata like title, slug, description, retail price, and release information.
+-   **`Variant`**: Represents a specific version of an item, typically a colorway. Each variant has its own slug and is linked to a parent `Item`.
+-   **`ItemImage`**: Stores URLs for an item's image gallery, with an index for ordering.
+-   **`Price`**: (Future use) Intended to store historical price data for each variant from various platforms.
 
 ## REST API Surface
-```
-GET    /items
-GET    /items/:id
-GET    /items/:id/prices
-POST   /auth/signup  { email, password }
-POST   /auth/login   { email, password }
-GET    /auth/me      (JWT)
-```
+The API provides endpoints for retrieving item and variant data.
 
-## Authentication Flow
-1. User signs up → password hashed with bcrypt → stored in users table.
-2. Login issues JWT (expires 7 days) signed with `JWT_SECRET`.
-3. Protected routes use middleware to verify token.
-
-## Deployment Pipeline
-1. Push to GitHub → Railway build pipeline.
-2. `pnpm install && pnpm run generate && pnpm run build`.
-3. Prisma migrations auto-apply (`prisma migrate deploy`).
-4. Container starts `node dist/index.js`. 
+-   `GET /items`: Returns a paginated list of all items.
+-   `GET /items/:id`: Returns a single item by its ID or slug, including all its associated `Variant` and `ItemImage` records.
+-   `GET /items/:id/prices`: (Future use) Intended to return price history for an item.
 
 ## Deployment Pattern (Fly.io)
-1.  **Secret Management**: Fly.io secrets (e.g., `DATABASE_URL`, `DIRECT_URL`) are only available at runtime, not during the `release_command` phase.
-2.  **Database Migrations**: Prisma migrations must be run at application startup.
-3.  **Startup Script**: A `docker-entrypoint.sh` script is used to orchestrate startup. It first runs `pnpm prisma migrate deploy`, then starts the application with `exec node dist/src/index.js`.
-4.  **Dockerfile Configuration**: The `Dockerfile`'s `CMD` is set to execute the `docker-entrypoint.sh` script. The `release_command` in `fly.toml` is removed. 
+The backend is deployed on Fly.io, with the following conventions:
+1.  **Secret Management**: `DATABASE_URL` is managed via Fly.io secrets and is only available at runtime.
+2.  **Database Migrations**: Prisma migrations are run automatically at application startup by a `docker-entrypoint.sh` script. This ensures the database is always in sync with the schema before the application starts. 

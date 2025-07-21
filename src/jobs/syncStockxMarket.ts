@@ -2,16 +2,15 @@ import { prisma } from '../utils/prisma'
 import { fetchWithAuth } from '../utils/stockxAuth'
 
 export async function syncStockxMarket() {
-  // Cast to any to bypass type checking until updated Prisma types
-  const items = await (prisma.item as any).findMany({
+  const variants = await prisma.variant.findMany({
     where: { stockxProductId: { not: null } },
-  })
+  });
 
-  for (const item of items) {
+  for (const variant of variants) {
     try {
-      const res = await fetchWithAuth(`https://api.stockx.com/v2/products/${(item as any).stockxProductId}/market`)
+      const res = await fetchWithAuth(`https://api.stockx.com/v2/products/${variant.stockxProductId}/market`);
       if (!res.ok) {
-        console.error('StockX market fetch failed', item.id, res.status)
+        console.error(`StockX market fetch failed for variant ${variant.id}: ${res.status}`);
         continue
       }
       const data = await res.json() as any
@@ -25,11 +24,9 @@ export async function syncStockxMarket() {
       ].filter(r => typeof r.price === 'number' && !isNaN(r.price))
 
       for (const r of rows) {
-        // @ts-ignore – model added in new migration
         await prisma.stockXPrice.create({
           data: {
-            itemId: item.id,
-            size: null,
+            variantId: variant.id,
             type: r.type,
             price: r.price,
             fetchedAt: now,
