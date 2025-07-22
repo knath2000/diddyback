@@ -1,5 +1,20 @@
-import { prisma } from '../src/utils/prisma';
-import { fetchWithAuth } from '../src/utils/stockxAuth';
+// Environment-aware dynamic imports so the script works both in development (TS files)
+// and in production where only compiled JS exists in /dist.
+// We purposely avoid static "import" to prevent the paths from being frozen at build time.
+
+import path from 'path'
+import { createRequire } from 'module'
+// node:module createRequire lets us use require() in an ES module / TS file
+const require = createRequire(import.meta.url)
+
+const isProd = process.env.NODE_ENV === 'production' || __filename.includes(`${path.sep}dist${path.sep}`)
+
+// In dev we execute with tsx/ts-node from project root. In prod the compiled file lives in
+// /app/dist/prisma/backfill-stockx-ids.js. utils live in /app/dist/utils.
+const baseDir = isProd ? path.join(__dirname, '..') : path.join(__dirname, '..', 'src')
+
+const { prisma } = require(path.join(baseDir, 'utils', 'prisma')) as typeof import('../src/utils/prisma')
+const { fetchWithAuth } = require(path.join(baseDir, 'utils', 'stockxAuth')) as typeof import('../src/utils/stockxAuth')
 
 async function main() {
   const items = await prisma.item.findMany({
