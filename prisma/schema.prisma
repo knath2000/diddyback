@@ -143,7 +143,16 @@ enum AlertCondition {
   ABOVE @map("above")
   BELOW @map("below")
   EQUAL @map("equal")
-} 
+}
+
+// Distributed job locks to ensure single execution across replicas
+model JobLock {
+  name       String   @id // lock name (e.g. "stockx-sync")
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("job_locks")
+}
 
 model ItemImage {
   id       String  @id @default(cuid())
