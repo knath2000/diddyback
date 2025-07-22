@@ -75,4 +75,13 @@ router.delete('/revoke', (req, res) => {
   res.json({ ok: true })
 })
 
+router.get('/extract-tokens', (req, res) => {
+  if (!requireAdmin(req)) return res.status(401).json({ error: 'unauthorized' })
+  res.json({
+    access_token: process.env.STOCKX_ACCESS_TOKEN || null,
+    refresh_token: process.env.STOCKX_REFRESH_TOKEN || null,
+    timestamp: new Date().toISOString()
+  })
+})
+
 export default router 
