@@ -3,7 +3,7 @@ import axios from 'axios'
 import { generateState, validateState, requireAdmin } from '../utils/oauthSecurity'
 import { getAccessToken, getTokenExpiry } from '../utils/stockxAuth'
 
-const router = Router()
+const router: Router = Router()
 
 const CLIENT_ID = process.env.STOCKX_CLIENT_ID!
 const CLIENT_SECRET = process.env.STOCKX_CLIENT_SECRET!

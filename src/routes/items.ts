@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express'
 import { prisma } from '../utils/prisma'
 
-const router = Router()
+const router: Router = Router()
 
 // GET /items
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
