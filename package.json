@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "node dist/src/index.js",
-    "build": "tsup",
+    "build": "tsup src/index.ts --format cjs --target node18 --outDir dist",
     "test": "vitest",
     "generate": "prisma generate",
     "scrape": "tsx prisma/scrape-supreme.ts",
