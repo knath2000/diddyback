@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
-    "build": "tsup src/index.ts --format cjs --target node18 --outDir dist && tsc --project tsconfig.json --outDir dist/prisma prisma/backfill-stockx-ids.ts",
+    "build": "tsup src/index.ts --format cjs --target node18 --outDir dist && tsc --outDir dist/prisma prisma/backfill-stockx-ids.ts",
     "test": "vitest",
     "generate": "prisma generate",
     "scrape": "tsx prisma/scrape-supreme.ts",
