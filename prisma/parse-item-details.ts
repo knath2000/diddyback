@@ -80,7 +80,7 @@ async function main() {
   try {
     const updated = await prisma.$transaction(async (tx) => {
       // @ts-ignore: fields added in latest schema
-      await tx.item.updateMany({
+      const updateResult = await tx.item.updateMany({
         where: { slug },
         data: {
           description,
@@ -106,7 +106,17 @@ async function main() {
           )
         );
       }
+
+      return updateResult;
     });
 
     if (updated.count === 0) {
-      console.warn(`
+      console.warn(`⚠️ No database rows were updated for slug ${slug}`);
+    }
+  } catch (e) {
+    console.error('❌ Error updating item:', e);
+    process.exit(1);
+  }
+}
+
+main();

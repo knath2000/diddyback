@@ -25,7 +25,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 // src/index.ts
 var import_express3 = __toESM(require("express"));
 var import_cors = __toESM(require("cors"));
-var import_dotenv2 = __toESM(require("dotenv"));
+var import_dotenv = __toESM(require("dotenv"));
 var import_node_cron = __toESM(require("node-cron"));
 
 // src/utils/prisma.ts
@@ -40,8 +40,8 @@ if (process.env.NODE_ENV !== "production") {
 
 // src/utils/stockxAuth.ts
 var import_axios = __toESM(require("axios"));
-var import_dotenv = __toESM(require("dotenv"));
-import_dotenv.default.config();
+var dotenv = __toESM(require("dotenv"));
+dotenv.config();
 var cachedToken = process.env.STOCKX_ACCESS_TOKEN || null;
 var tokenExpiresAt = 0;
 function getTokenExpiry() {
@@ -94,38 +94,59 @@ async function fetchWithAuth(url, opts = {}) {
 
 // src/jobs/syncStockxMarket.ts
 async function syncStockxMarket() {
-  const variants = await prisma.variant.findMany({
-    where: { stockxProductId: { not: null } }
-  });
-  for (const variant of variants) {
-    try {
-      const res = await fetchWithAuth(`https://api.stockx.com/v2/products/${variant.stockxProductId}/market`);
-      if (!res.ok) {
-        console.error(`StockX market fetch failed for variant ${variant.id}: ${res.status}`);
-        continue;
+  const lockName = "stockx-sync";
+  const lockTtlMs = 25 * 60 * 1e3;
+  try {
+    await prisma.jobLock.create({
+      data: {
+        name: lockName,
+        expiresAt: new Date(Date.now() + lockTtlMs)
       }
-      const data = await res.json();
-      if (!data?.Product?.market) continue;
-      const m = data.Product.market;
-      const now = /* @__PURE__ */ new Date();
-      const rows = [
-        { type: "lowestAsk", price: m.lowestAsk },
-        { type: "highestBid", price: m.highestBid },
-        { type: "lastSale", price: m.lastSale }
-      ].filter((r) => typeof r.price === "number" && !isNaN(r.price));
-      for (const r of rows) {
-        await prisma.stockXPrice.create({
-          data: {
-            variantId: variant.id,
-            type: r.type,
-            price: r.price,
-            fetchedAt: now
-          }
-        });
-      }
-    } catch (err) {
-      console.error("syncStockxMarket error", err);
+    });
+  } catch (err) {
+    if (err.code === "P2002" || err.meta?.cause?.includes("Unique")) {
+      console.log("[syncStockxMarket] Another instance holds the lock \u2013 skipping");
+      return;
     }
+    throw err;
+  }
+  try {
+    const variants = await prisma.variant.findMany({
+      where: { stockxProductId: { not: null } }
+    });
+    for (const variant of variants) {
+      try {
+        const res = await fetchWithAuth(`https://api.stockx.com/v2/products/${variant.stockxProductId}/market`);
+        if (!res.ok) {
+          console.error(`StockX market fetch failed for variant ${variant.id}: ${res.status}`);
+          continue;
+        }
+        const data = await res.json();
+        if (!data?.Product?.market) continue;
+        const m = data.Product.market;
+        const now = /* @__PURE__ */ new Date();
+        const rows = [
+          { type: "lowestAsk", price: m.lowestAsk },
+          { type: "highestBid", price: m.highestBid },
+          { type: "lastSale", price: m.lastSale }
+        ].filter((r) => typeof r.price === "number" && !isNaN(r.price));
+        for (const r of rows) {
+          await prisma.stockXPrice.create({
+            data: {
+              variantId: variant.id,
+              type: r.type,
+              price: r.price,
+              fetchedAt: now
+            }
+          });
+        }
+      } catch (err) {
+        console.error("syncStockxMarket error", err);
+      }
+    }
+  } finally {
+    await prisma.jobLock.delete({ where: { name: lockName } }).catch(() => {
+    });
   }
 }
 
@@ -397,7 +418,7 @@ router2.delete("/revoke", (req, res) => {
 var oauth_default = router2;
 
 // src/index.ts
-import_dotenv2.default.config();
+import_dotenv.default.config();
 var app = (0, import_express3.default)();
 console.log("Environment PORT variable:", process.env.PORT);
 var port = process.env.PORT ? Number(process.env.PORT) : 8080;
